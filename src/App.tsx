@@ -1,41 +1,61 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import Cookies from 'js-cookie';
+import axios from 'axios';
 
 const giProUri = import.meta.env.VITE_GITHUB_USER_URL;
 const ipFinderUri = import.meta.env.VITE_IP_FINDER_URL;
+
+interface GitHubUser {
+  login: string;
+  id: number;
+  name: string;
+  html_url: string;
+  // Add other fields as needed
+}
 
 function App() {
   const [dotcomUser, setDotcomUser] = useState('');
   const [ipAddress, setIpAddress] = useState('');
 
+
+
+
   const fetchIpAddress = async () => {
     try {
-      const response = await fetch(ipFinderUri);
-      if (!response.ok) throw new Error('Failed to fetch IP address');
 
-      const data = await response.json();
+      const response = await axios.get(ipFinderUri);
+
+      if (response.status !== 200) throw new Error('Failed to fetch IP address');
+
+      const data = response.data as any;
+
       setIpAddress(data.ip);
+
       console.log(`User's IP address: ${data.ip}`);
 
       // TODO: Send the IP address to the backend to get the location via the Geolocation API.
+
 
     } catch (error) {
       console.error("Error fetching IP address:", error);
     }
   };
-
-  const fetchGitHubUserData = async (username: any) => {
+  const fetchGitHubUserData = async (username: string): Promise<void> => {
     try {
-      const response = await fetch(`${giProUri}/${username}`);
-      if (!response.ok) throw new Error('Failed to fetch GitHub user data');
 
-      const data = await response.json();
+      const response = await axios.get<GitHubUser>(`${giProUri}/${username}`);
+
+      if (response.status !== 200) throw new Error('Failed to fetch GitHub user data');
+
+      const data = response.data;
       console.log('GitHub User Data:', data);
+
     } catch (error) {
       console.error("Error fetching GitHub user data:", error);
     }
   };
+
 
   useEffect(() => {
     const initialize = async () => {
@@ -48,7 +68,7 @@ function App() {
         } else if (ipFinderUri) {
 
           await fetchIpAddress();
-          
+
         }
       } catch (error) {
         console.error("Initialization error:", error);
